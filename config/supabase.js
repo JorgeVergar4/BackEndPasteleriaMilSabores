@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Crear cliente Supabase usando variables de entorno definidas en .env o en Vercel
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+// Usa el nombre correcto: SUPABASE_ANON_KEY
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 module.exports = { supabase };
