@@ -1,6 +1,12 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
+  // Validar que JWT_SECRET esté configurado
+  if (!process.env.JWT_SECRET) {
+    console.error('❌ JWT_SECRET no configurado');
+    return res.status(500).json({ error: 'Error de configuración del servidor' });
+  }
+
   const authHeader = req.headers['authorization'];
 
   if (!authHeader) {

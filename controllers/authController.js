@@ -3,6 +3,10 @@ const jwt = require('jsonwebtoken');
 const { supabase } = require('../config/supabase');
 
 const generateToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET no configurado');
+  }
+  
   return jwt.sign(
     {
       id: user.id,
