@@ -1,18 +1,26 @@
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
 
+// Validar variables de entorno
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  console.warn('⚠️ Faltan variables de entorno de Supabase. Revisa SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY');
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Error: Variables de entorno de Supabase no configuradas');
+  console.error('   Asegúrate de tener SUPABASE_URL y SUPABASE_ANON_KEY en tu .env o en Vercel');
+  throw new Error('Configuración de Supabase incompleta');
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+// Crear cliente de Supabase
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: false,
     persistSession: false
   }
 });
+
+// Verificar conexión (solo en desarrollo)
+if (process.env.NODE_ENV !== 'production') {
+  console.log('✅ Cliente de Supabase inicializado');
+  console.log(`   URL: ${supabaseUrl.substring(0, 30)}...`);
+}
 
 module.exports = { supabase };

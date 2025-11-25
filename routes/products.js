@@ -14,12 +14,12 @@ const { verifyToken, checkRole } = require('../middleware/auth');
 // GET /api/products
 router.get('/', getAllProducts);
 
-// GET /api/products/:id
-router.get('/:id', getProductById);
-
-// Protegido: productos del usuario autenticado
+// Protegido: productos del usuario autenticado (debe ir antes de /:id)
 // GET /api/products/my/products
 router.get('/my/products', verifyToken, getMyProducts);
+
+// GET /api/products/:id (debe ir después de rutas específicas)
+router.get('/:id', getProductById);
 
 // Protegido: solo admins para crear/editar/eliminar
 // POST /api/products
