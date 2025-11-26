@@ -73,6 +73,16 @@ const register = async (req, res, next) => {
 
     const token = generateToken(createdUser);
 
+    // Enviar token como cookie si está habilitado mediante la variable de entorno SEND_COOKIE=true
+    if (process.env.SEND_COOKIE === 'true') {
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+      });
+    }
+
     return res.status(201).json({
       user: createdUser,
       token
@@ -111,6 +121,16 @@ const login = async (req, res, next) => {
     }
 
     const token = generateToken(user);
+
+    // Enviar token como cookie si está habilitado mediante la variable de entorno SEND_COOKIE=true
+    if (process.env.SEND_COOKIE === 'true') {
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+      });
+    }
 
     // No devolvemos password_hash
     const { password_hash, ...userSafe } = user;

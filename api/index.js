@@ -1,11 +1,12 @@
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 // Validar variables de entorno críticas al inicio
 const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
 if (missingVars.length > 0) {
   console.error('❌ Variables de entorno faltantes:', missingVars.join(', '));
   console.error('   Configura estas variables en tu archivo .env o en Vercel');
@@ -14,7 +15,7 @@ if (missingVars.length > 0) {
   }
 }
 
-// Importar rutas
+// Importar rutas (rutas están en la raíz, fuera de /api)
 const authRoutes = require('../routes/auth');
 const categoryRoutes = require('../routes/categories');
 const productRoutes = require('../routes/products');
@@ -22,7 +23,11 @@ const userRoutes = require('../routes/users');
 
 const app = express();
 
+// Habilitar CORS para permitir que el frontend se comunique con la API
+app.use(cors({ origin: process.env.FRONTEND_URL || true, credentials: true }));
+
 // Middleware
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -31,18 +36,17 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// Ruta de salud
+// Ruta raíz y de salud
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'API Pastelería Mil Sabores OK',
     version: '1.0.0',
     status: 'running'
   });
 });
 
-// Ruta de salud para /api
 app.get('/api', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'API Pastelería Mil Sabores OK',
     version: '1.0.0',
     status: 'running',
@@ -55,7 +59,7 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Rutas de la API
+// Rutas principales
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
@@ -63,7 +67,7 @@ app.use('/api/users', userRoutes);
 
 // Manejo de rutas no encontradas
 app.use((req, res, next) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Recurso no encontrado',
     path: req.path,
     method: req.method
@@ -73,22 +77,20 @@ app.use((req, res, next) => {
 // Manejo de errores global
 app.use((err, req, res, next) => {
   console.error('🔥 Error global:', err);
-  
-  // Error de validación de Supabase
+
+  // Error de Supabase
   if (err.code && err.code.startsWith('PGRST')) {
     return res.status(400).json({
       error: 'Error en la base de datos',
       message: err.message
     });
   }
-  
   // Error de JWT
   if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
     return res.status(401).json({
       error: 'Token inválido o expirado'
     });
   }
-  
   res.status(err.status || 500).json({
     error: err.message || 'Error interno del servidor',
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })

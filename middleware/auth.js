@@ -7,16 +7,21 @@ const verifyToken = (req, res, next) => {
     return res.status(500).json({ error: 'Error de configuración del servidor' });
   }
 
+  // Intentar obtener token desde Authorization header
+  let token;
   const authHeader = req.headers['authorization'];
-
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Token no proporcionado' });
+  if (authHeader) {
+    const parts = authHeader.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') token = parts[1];
   }
 
-  const [type, token] = authHeader.split(' ');
+  // Si no viene en header, intentar desde cookie (req.cookies gracias a cookie-parser)
+  if (!token && req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
 
-  if (type !== 'Bearer' || !token) {
-    return res.status(401).json({ error: 'Formato de token inválido' });
+  if (!token) {
+    return res.status(401).json({ error: 'Token no proporcionado' });
   }
 
   try {
