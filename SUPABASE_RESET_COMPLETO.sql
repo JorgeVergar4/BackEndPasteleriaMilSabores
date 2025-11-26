@@ -30,6 +30,11 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
+-- ====================================
+-- 4. DESHABILITAR RLS EN TODAS LAS TABLAS
+-- ====================================
+-- IMPORTANTE: Deshabilitamos RLS para que la API funcione correctamente
+
 -- Habilitar triggers nuevamente
 SET session_replication_role = 'origin';
 
@@ -331,7 +336,19 @@ BEGIN
 END $$;
 
 -- ====================================
--- 9. CREAR VISTAS
+-- 9. DESHABILITAR RLS (Row Level Security)
+-- ====================================
+-- IMPORTANTE: RLS debe estar deshabilitado para que la API funcione
+-- Si necesitas seguridad adicional, configura políticas específicas
+
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE categories DISABLE ROW LEVEL SECURITY;
+ALTER TABLE products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items DISABLE ROW LEVEL SECURITY;
+
+-- ====================================
+-- 10. CREAR VISTAS
 -- ====================================
 CREATE VIEW products_with_category AS
 SELECT 
@@ -352,7 +369,7 @@ FROM orders o
 LEFT JOIN users u ON o.user_id = u.id;
 
 -- ====================================
--- 10. FUNCIÓN CALCULAR TOTAL
+-- 11. FUNCIÓN CALCULAR TOTAL
 -- ====================================
 CREATE FUNCTION calculate_order_total(order_uuid UUID)
 RETURNS DECIMAL AS $$
