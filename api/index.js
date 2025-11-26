@@ -19,8 +19,39 @@ const authRoutes = require('../routes/auth');
 const categoryRoutes = require('../routes/categories');
 const productRoutes = require('../routes/products');
 const userRoutes = require('../routes/users');
+const orderRoutes = require('../routes/orders');
 
 const app = express();
+
+// CORS - Configuración para Vercel y desarrollo local
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // En producción, permitir solo orígenes específicos
+  if (process.env.NODE_ENV === 'production') {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',')
+      : [];
+    
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
+  } else {
+    // En desarrollo, permitir cualquier origen
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 // Middleware
 app.use(express.json());
@@ -50,7 +81,8 @@ app.get('/api', (req, res) => {
       auth: '/api/auth',
       categories: '/api/categories',
       products: '/api/products',
-      users: '/api/users'
+      users: '/api/users',
+      orders: '/api/orders'
     }
   });
 });
@@ -60,6 +92,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Manejo de rutas no encontradas
 app.use((req, res, next) => {

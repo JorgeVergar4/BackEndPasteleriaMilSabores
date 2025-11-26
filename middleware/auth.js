@@ -21,7 +21,7 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, email, role }
+    req.user = decoded; // { id, email, rol }
     next();
   } catch (err) {
     console.error('Error verificando token:', err);
@@ -35,7 +35,9 @@ const checkRole = (...allowedRoles) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = req.user.rol || req.user.role; // Compatibilidad con ambos nombres
+
+    if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({ error: 'No tienes permisos para esta acción' });
     }
 

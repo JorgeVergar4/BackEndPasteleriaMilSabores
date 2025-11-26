@@ -5,7 +5,7 @@ const getAllCategories = async (req, res, next) => {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .order('name', { ascending: true });
+      .order('nombre', { ascending: true });
 
     if (error) throw error;
 
@@ -20,11 +20,11 @@ const getProductsByCategory = async (req, res, next) => {
   try {
     const { categoryName } = req.params;
 
-    // categoryName será el slug de la categoría
+    // categoryName será el nombre o id de la categoría
     const { data: category, error: catError } = await supabase
       .from('categories')
-      .select('id, name, slug')
-      .eq('slug', categoryName)
+      .select('id, nombre, descripcion')
+      .or(`nombre.ilike.%${categoryName}%,id.eq.${categoryName}`)
       .single();
 
     if (catError && catError.code === 'PGRST116') {
@@ -35,8 +35,8 @@ const getProductsByCategory = async (req, res, next) => {
     const { data: products, error: prodError } = await supabase
       .from('products')
       .select('*')
-      .eq('category_id', category.id)
-      .order('name', { ascending: true });
+      .eq('categoria_id', category.id)
+      .order('nombre', { ascending: true });
 
     if (prodError) throw prodError;
 

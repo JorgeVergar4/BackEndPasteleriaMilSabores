@@ -2,10 +2,31 @@ const { supabase } = require('../config/supabase');
 
 const getAllProducts = async (req, res, next) => {
   try {
-    const { data, error } = await supabase
+    const { categoria, enOferta, buscar } = req.query;
+
+    let query = supabase
       .from('products')
-      .select('*')
-      .order('name', { ascending: true });
+      .select(`
+        *,
+        categories (
+          id,
+          nombre
+        )
+      `);
+
+    if (categoria) {
+      query = query.eq('categoria_id', categoria);
+    }
+
+    if (enOferta === 'true') {
+      query = query.eq('en_oferta', true);
+    }
+
+    if (buscar) {
+      query = query.or(`nombre.ilike.%${buscar}%,descripcion.ilike.%${buscar}%,codigo.ilike.%${buscar}%`);
+    }
+
+    const { data, error } = await query.order('nombre', { ascending: true });
 
     if (error) throw error;
 
@@ -22,7 +43,13 @@ const getProductById = async (req, res, next) => {
 
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        categories (
+          id,
+          nombre
+        )
+      `)
       .eq('id', id)
       .single();
 
@@ -42,32 +69,62 @@ const getProductById = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   try {
     const {
-      name,
-      description,
-      price,
+      codigo,
+      nombre,
+      descripcion,
+      imagen,
+      categoria_id,
+      precio,
+      precioOriginal,
       stock,
-      category_id,
-      image_url,
-      is_active
+      enOferta,
+      tamaño,
+      ingredientes,
+      personalizable,
+      especial
     } = req.body;
 
-    if (!name || price == null || !category_id) {
-      return res.status(400).json({ error: 'Nombre, precio y categoría son obligatorios' });
+    if (!nombre || precio == null || !categoria_id || !codigo) {
+      return res.status(400).json({ error: 'Código, nombre, precio y categoría son obligatorios' });
+    }
+
+    // Verificar si el código ya existe
+    const { data: existing, error: existingError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('codigo', codigo);
+
+    if (existingError) throw existingError;
+
+    if (existing && existing.length > 0) {
+      return res.status(400).json({ error: 'El código del producto ya existe' });
     }
 
     const { data, error } = await supabase
       .from('products')
       .insert({
-        name,
-        description,
-        price,
+        codigo,
+        nombre,
+        descripcion,
+        imagen,
+        categoria_id,
+        precio,
+        precio_original: precioOriginal || null,
         stock: stock ?? 0,
-        category_id,
-        image_url,
-        is_active: is_active ?? true,
+        en_oferta: enOferta ?? false,
+        tamaño: tamaño || null,
+        ingredientes: ingredientes || [],
+        personalizable: personalizable ?? false,
+        especial: especial || null,
         created_by: req.user.id
       })
-      .select('*')
+      .select(`
+        *,
+        categories (
+          id,
+          nombre
+        )
+      `)
       .single();
 
     if (error) throw error;

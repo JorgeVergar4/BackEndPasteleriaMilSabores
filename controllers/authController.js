@@ -6,12 +6,12 @@ const generateToken = (user) => {
   if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET no configurado');
   }
-  
+
   return jwt.sign(
     {
       id: user.id,
       email: user.email,
-      role: user.role
+      rol: user.rol || user.role
     },
     process.env.JWT_SECRET,
     {
@@ -24,17 +24,23 @@ const register = async (req, res, next) => {
   try {
     const {
       nombre,
-      apellido,
+      apellidos,
       email,
       password,
       telefono,
-      fecha_nacimiento,
+      fechaNacimiento,
       region,
-      role
+      rol
     } = req.body;
 
-    if (!email || !password || !nombre) {
-      return res.status(400).json({ error: 'Nombre, email y contraseña son obligatorios' });
+    if (!email || !password || !nombre || !apellidos) {
+      return res.status(400).json({ error: 'Nombre, apellidos, email y contraseña son obligatorios' });
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Formato de email inválido' });
     }
 
     // Verificar si el email ya existe
@@ -51,22 +57,42 @@ const register = async (req, res, next) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Role por defecto: "client"
-    const userRole = role && ['admin', 'client'].includes(role) ? role : 'client';
+    // Calcular edad si se proporciona fecha de nacimiento
+    let edad = null;
+    let descuentoSenior = false;
+    if (fechaNacimiento) {
+      const hoy = new Date();
+      const nacimiento = new Date(fechaNacimiento);
+      edad = hoy.getFullYear() - nacimiento.getFullYear();
+      const mes = hoy.getMonth() - nacimiento.getMonth();
+      if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+        edad--;
+      }
+      descuentoSenior = edad >= 50;
+    }
+
+    // Verificar si es estudiante DUOC
+    const esEstudianteDuoc = email.endsWith('@duocuc.cl');
+
+    // Role por defecto: "cliente"
+    const userRole = rol && ['admin', 'cliente'].includes(rol) ? rol : 'cliente';
 
     const { data: createdUser, error: insertError } = await supabase
       .from('users')
       .insert({
         nombre,
-        apellido,
+        apellidos,
         email,
         password_hash: passwordHash,
         telefono,
-        fecha_nacimiento,
+        fecha_nacimiento: fechaNacimiento,
         region,
-        role: userRole
+        edad,
+        es_estudiante_duoc: esEstudianteDuoc,
+        descuento_senior: descuentoSenior,
+        rol: userRole
       })
-      .select('id, nombre, apellido, email, role, created_at')
+      .select('id, nombre, apellidos, email, telefono, fecha_nacimiento, region, edad, es_estudiante_duoc, descuento_senior, rol, created_at')
       .single();
 
     if (insertError) throw insertError;
