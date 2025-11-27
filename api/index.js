@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const morgan = require('morgan');
 require('dotenv').config();
 
@@ -14,27 +15,32 @@ if (missingVars.length > 0) {
   }
 }
 
+console.log('Configurando CORS...');
 // Configuración de CORS
 const allowedOrigins = [
   'http://localhost:3000',
   'https://pasteleria-mil-sabores-react-three.vercel.app',
 ];
 
+// middleware de CORS – tiene que ir ANTES de las rutas
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requests sin Origin (por ejemplo, Postman)
+    console.log('Request desde origin:', origin); // LOG extra
+
+    // Permite peticiones sin origin (Postman, curl, etc.)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
-      console.log('Origen no permitido por CORS:', origin);
+      console.log('Origen NO permitido por CORS:', origin);
       return callback(new Error('No permitido por CORS'));
     }
   },
   credentials: true,
 }));
 
+app.use(express.json());
 
 // Importar rutas
 const authRoutes = require('../routes/auth');
@@ -83,6 +89,8 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
+
+app.use('/api/products', require('./routes/productsRoutes'));
 
 // Ruta de salud
 app.get('/', (req, res) => {
