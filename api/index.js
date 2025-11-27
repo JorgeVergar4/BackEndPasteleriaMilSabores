@@ -14,6 +14,28 @@ if (missingVars.length > 0) {
   }
 }
 
+// Configuración de CORS
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://pasteleria-mil-sabores-react-three.vercel.app',
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir requests sin Origin (por ejemplo, Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      console.log('Origen no permitido por CORS:', origin);
+      return callback(new Error('No permitido por CORS'));
+    }
+  },
+  credentials: true,
+}));
+
+
 // Importar rutas
 const authRoutes = require('../routes/auth');
 const categoryRoutes = require('../routes/categories');
